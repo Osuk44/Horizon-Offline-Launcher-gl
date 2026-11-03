@@ -1,0 +1,47 @@
+name: Build Horizon Launcher (Linux)
+
+on:
+  workflow_dispatch: # Te permite ejecutarlo manualmente desde la pestaña "Actions"
+  push:
+    branches: [ main ] # Se ejecuta automáticamente cuando subes cambios a main
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04 # Usamos 22.04 por ser más compatible con las librerías del sistema
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Instalar dependencias del sistema (GPUI/WGPU)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential pkg-config libssl-dev \
+            libx11-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libfontconfig1-dev libfreetype6-dev \
+            libasound2-dev libvulkan-dev \
+            libxcb1-dev libxcb-render0-dev libxcb-shape0-dev \
+            libxcb-xfixes0-dev libxcb-randr0-dev \
+            libxcb-render-util0-dev libxcb-keysyms1-dev libxcb-icccm4-dev
+
+      - name: Configurar Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable # El Cargo.toml requiere 1.85, stable es suficiente
+
+      - name: Caché de Cargo (para acelerar compilaciones futuras)
+        uses: Swatinem/rust-cache@v2
+
+      - name: Compilar el Launcher (Perfil Fast)
+        # Compilamos usando el perfil "fast" definido en tu Cargo.toml
+        run: cargo build --profile fast --bin horizon-launcher
+        env:
+          WGPU_BACKEND: gl # Forzamos OpenGL también en el entorno de compilación
+
+      - name: Subir el binario compilado (Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: horizon-launcher-linux-x86_64
+          path: target/fast/horizon-launcher
+          retention-days: 5
