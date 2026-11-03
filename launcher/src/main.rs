@@ -4822,6 +4822,14 @@ fn main() {
     if let Some(code) = cli::run() {
         std::process::exit(code);
     }
+
+    // =========================================================
+    // PARCHE PARA INTEL HD 2000: Forzar OpenGL antes de iniciar GPUI
+    // =========================================================
+    std::env::set_var("WGPU_BACKEND", "gl");
+    // Si OpenGL falla y da pantalla negra, descomenta la siguiente línea para usar la CPU:
+    // std::env::set_var("LIBGL_ALWAYS_SOFTWARE", "1");
+
     gpui_platform::application()
         .with_assets(blocks::Assets)
         .run(|cx: &mut App| {
