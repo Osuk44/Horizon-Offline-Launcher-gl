@@ -1,13 +1,13 @@
 name: Build Horizon Launcher (Linux)
 
 on:
-  workflow_dispatch: # Te permite ejecutarlo manualmente desde la pestaña "Actions"
+  workflow_dispatch:
   push:
-    branches: [ main ] # Se ejecuta automáticamente cuando subes cambios a main
+    branches: [ main ]
 
 jobs:
   build-linux:
-    runs-on: ubuntu-22.04 # Usamos 22.04 por ser más compatible con las librerías del sistema
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout del código
@@ -28,20 +28,22 @@ jobs:
       - name: Configurar Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable # El Cargo.toml requiere 1.85, stable es suficiente
+          toolchain: stable
 
-      - name: Caché de Cargo (para acelerar compilaciones futuras)
+      - name: Caché de Cargo
         uses: Swatinem/rust-cache@v2
+        with:
+          # Cachear el target del subdirectorio launcher
+          workspaces: launcher -> target
 
       - name: Compilar el Launcher (Perfil Fast)
-        # Compilamos usando el perfil "fast" definido en tu Cargo.toml
-        run: cargo build --profile fast --bin horizon-launcher
+        run: cargo build --profile fast --bin horizon-launcher --manifest-path launcher/Cargo.toml
         env:
-          WGPU_BACKEND: gl # Forzamos OpenGL también en el entorno de compilación
+          WGPU_BACKEND: gl
 
-      - name: Subir el binario compilado (Artifact)
+      - name: Subir el binario compilado
         uses: actions/upload-artifact@v4
         with:
           name: horizon-launcher-linux-x86_64
-          path: target/fast/horizon-launcher
+          path: launcher/target/fast/horizon-launcher
           retention-days: 5
